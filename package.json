@@ -1,0 +1,44 @@
+{
+  "name": "meme-inc",
+  "version": "0.1.0",
+  "description": "A round-based social-network meme simulation.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check && tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MqCreaple/meme-inc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MqCreaple/meme-inc/issues"
+  },
+  "homepage": "https://github.com/MqCreaple/meme-inc#readme",
+  "dependencies": {
+    "astro": "^7.3.2",
+    "graphology": "^0.26.0",
+    "graphology-layout-forceatlas2": "^0.10.1",
+    "sigma": "^3.0.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.0",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^1.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=9.6.5"
+  }
+}
