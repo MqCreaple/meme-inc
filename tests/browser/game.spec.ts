@@ -65,11 +65,75 @@ test('mobile layout supports theme validation and literal user text', async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  await expect(page.locator('#network')).toHaveAttribute(
+    'data-layout',
+    'ready',
+  );
   await page.screenshot({ path: 'test-results/mobile.png', fullPage: true });
 });
 test('desktop initial view', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto('/');
   await expect(page.locator('#legend span')).toHaveCount(8);
+  await expect(page.locator('#network')).toHaveAttribute(
+    'data-layout',
+    'ready',
+  );
   await page.screenshot({ path: 'test-results/desktop.png', fullPage: true });
+});
+
+test('Enter advances once without hijacking forms or native buttons', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#network')).toHaveAttribute(
+    'data-layout',
+    'ready',
+  );
+  await page.locator('#network').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#round')).toHaveText('01');
+  await page.keyboard.down('Enter');
+  await page.keyboard.down('Enter');
+  await page.keyboard.up('Enter');
+  await expect(page.locator('#round')).toHaveText('02');
+  await page.keyboard.press('Shift+Enter');
+  await expect(page.locator('#round')).toHaveText('02');
+  await page.locator('#meme-name').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#meme-count')).toHaveText('1 memes');
+  await expect(page.locator('#round')).toHaveText('02');
+  await page.locator('#next-round').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#round')).toHaveText('03');
+  await page.locator('#seed').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#round')).toHaveText('00');
+});
+
+test('Sigma renders a worker layout and replaces renderers cleanly on reset', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto('/');
+  const graph = page.locator('#network');
+  await expect(graph).toHaveAttribute('data-layout', 'ready');
+  await expect(graph.locator('canvas.sigma-mouse')).toHaveCount(1);
+  await expect(graph.locator('canvas.sigma-edges')).toHaveCount(1);
+  await graph.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#person-title')).toHaveText('Person 001');
+  await page.locator('#follow-edges').check();
+  await page.locator('#friend-edges').uncheck();
+  await page.locator('#reset-view').click();
+  // Reset while a larger worker is still computing; stale results must be discarded.
+  await page.locator('#size').selectOption('10000');
+  await page.getByRole('button', { name: 'New network' }).click();
+  await page.locator('#size').selectOption('100');
+  await page.getByRole('button', { name: 'New network' }).click();
+  await expect(graph).toHaveAttribute('data-layout', 'ready');
+  await expect(graph.locator('canvas.sigma-mouse')).toHaveCount(1);
+  await expect(page.locator('#population')).toHaveText('100');
+  expect(errors).toEqual([]);
 });

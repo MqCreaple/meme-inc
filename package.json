@@ -21,7 +21,10 @@
   },
   "homepage": "https://github.com/MqCreaple/meme-inc#readme",
   "dependencies": {
-    "astro": "^7.3.2"
+    "astro": "^7.3.2",
+    "graphology": "^0.26.0",
+    "graphology-layout-forceatlas2": "^0.10.1",
+    "sigma": "^3.0.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

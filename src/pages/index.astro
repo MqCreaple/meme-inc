@@ -37,7 +37,12 @@ import { THEMES, ATTRIBUTES } from '../lib/simulation';
           <div class="round-label">
             ROUND <strong id="round">00</strong>
           </div>
-          <button id="next-round" class="primary">
+          <button
+            id="next-round"
+            title="Next round (Enter)"
+            aria-keyshortcuts="Enter"
+            class="primary"
+          >
             Next round <span aria-hidden="true">↗</span>
           </button>
         </div>
@@ -80,12 +85,14 @@ import { THEMES, ATTRIBUTES } from '../lib/simulation';
             </span>
           </div>
           <div class="canvas-wrap">
-            <canvas
+            <div
               id="network"
               tabindex="0"
-              aria-label="Social network. Click a person to inspect them. Use arrow keys to select people and Escape to clear selection."
-            ></canvas>
+              aria-label="Social network. Click a person to inspect them. Use arrow keys to select people, Escape to clear selection, and Enter for the next round."
+            ></div>
             <div class="canvas-note">
+              <span id="layout-status">Arranging connections…</span>
+              <br />
               Click a person to explore <span>·</span> Scroll to zoom{' '}
               <span>·</span> Drag to pan
             </div>
