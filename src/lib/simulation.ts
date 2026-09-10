@@ -1,3 +1,4 @@
+import { assignNames } from './names';
 export const THEMES = [
   'sports',
   'music',
@@ -40,6 +41,7 @@ export type Channel = 'friend' | 'follow';
 export type Recommendation = 'balanced' | 'interests' | 'discovery';
 export interface Person {
   id: number;
+  name: string;
   interests: number[];
   preferences: { mean: number; sigma: number }[];
   personality: Record<(typeof PERSONALITIES)[number], number>;
@@ -58,6 +60,7 @@ export interface Meme {
   id: number;
   root: number;
   parent?: number;
+  creator?: number;
   name: string;
   themes: number[];
   attributes: number[];
@@ -204,6 +207,7 @@ export class Simulation {
     if (!Number.isInteger(size) || size < 100 || size > 10000)
       throw new Error('Population must be between 100 and 10,000.');
     this.rng = random(seed);
+    const names = assignNames(size, seed);
     this.people = Array.from({ length: size }, (_, id) => {
       const raw = THEMES.map(
         () => (-Math.log(Math.max(1e-10, this.rng()))) ** 3,
@@ -211,6 +215,7 @@ export class Simulation {
       const sum = raw.reduce((a, b) => a + b, 0);
       return {
         id,
+        name: names[id],
         interests: raw.map((v) => v / sum),
         preferences: ATTRIBUTES.map(() => ({
           mean: this.rng(),
@@ -372,7 +377,7 @@ export class Simulation {
       });
     return meme;
   }
-  private addMeme(draft: MemeDraft, parent?: Meme) {
+  private addMeme(draft: MemeDraft, parent?: Meme, creator?: number) {
     const id = this.memes.size;
     const meme: Meme = {
       ...draft,
@@ -383,6 +388,7 @@ export class Simulation {
       id,
       root: parent?.root ?? id,
       parent: parent?.id,
+      creator,
       born: this.round,
     };
     this.memes.set(id, meme);
@@ -428,6 +434,7 @@ export class Simulation {
         name: `${this.memes.get(original.root)!.name.slice(0, 32)} · remix ${this.memes.size}`,
       },
       original,
+      p.id,
     );
   }
   step(): RoundStats {

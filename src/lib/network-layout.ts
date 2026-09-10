@@ -5,15 +5,7 @@ import type { MultiGraph } from 'graphology';
 export function arrangeNetwork(graph: MultiGraph) {
   forceAtlas2.assign(graph, {
     iterations: graph.order > 1000 ? 200 : 350,
-    settings: {
-      ...forceAtlas2.inferSettings(graph),
-      barnesHutOptimize: true,
-      linLogMode: false,
-      gravity: 1,
-      scalingRatio: 10,
-      slowDown: 5,
-      edgeWeightInfluence: 1,
-    },
+    settings: layoutSettings(graph),
     getEdgeWeight: 'weight',
   });
   return graph.nodes().map((id) => ({
@@ -21,4 +13,16 @@ export function arrangeNetwork(graph: MultiGraph) {
     x: graph.getNodeAttribute(id, 'x') as number,
     y: graph.getNodeAttribute(id, 'y') as number,
   }));
+}
+
+export function layoutSettings(graph: MultiGraph) {
+  return {
+    ...forceAtlas2.inferSettings(graph),
+    barnesHutOptimize: true,
+    linLogMode: false,
+    gravity: 1,
+    scalingRatio: 10,
+    slowDown: 5,
+    edgeWeightInfluence: 1,
+  };
 }
