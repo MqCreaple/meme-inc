@@ -151,6 +151,8 @@ test('live forces respond to channel and priority changes and can be paused', as
   await page.goto('/');
   const graph = page.locator('#network');
   await expect(graph).toHaveAttribute('data-layout', 'ready');
+  await page.locator('#pause-layout').check();
+  await page.locator('#pause-layout').uncheck();
   const frame = Number(await graph.getAttribute('data-layout-frame'));
   await expect
     .poll(async () => Number(await graph.getAttribute('data-layout-frame')))
@@ -232,4 +234,29 @@ test('memory controls select variants or families and creativity modes are avail
   await page.locator('#next-round').click();
   await page.locator('#colour').selectOption('creators');
   await expect(page.locator('#legend')).toContainText('Created this round');
+});
+
+test('layout settles automatically and restarts after a force change', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const graph = page.locator('#network');
+  await expect(graph).toHaveAttribute('data-layout-motion', 'settled', {
+    timeout: 20000,
+  });
+  const frame = await graph.getAttribute('data-layout-frame');
+  await page.waitForTimeout(300);
+  expect(await graph.getAttribute('data-layout-frame')).toBe(frame);
+  await page.locator('#follow-edges').check();
+  await expect
+    .poll(async () => Number(await graph.getAttribute('data-layout-frame')))
+    .toBeGreaterThan(Number(frame));
+  await expect(graph).toHaveAttribute('data-layout-motion', 'settled', {
+    timeout: 20000,
+  });
+  const settledAgain = await graph.getAttribute('data-layout-frame');
+  await page.locator('#colour').selectOption('creativity');
+  await page.locator('#next-round').click();
+  await page.waitForTimeout(150);
+  expect(await graph.getAttribute('data-layout-frame')).toBe(settledAgain);
 });
