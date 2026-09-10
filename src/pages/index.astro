@@ -109,6 +109,8 @@ import { THEMES, ATTRIBUTES } from '../lib/simulation';
                 <option value="interest">Interest</option>
                 <option value="preference">Preference</option>
                 <option value="memory">Meme memory</option>
+                <option value="creativity">Cumulative creativity</option>
+                <option value="creators">Recent creators</option>
               </select>
             </label>
             <label class="toggle">
@@ -117,9 +119,27 @@ import { THEMES, ATTRIBUTES } from '../lib/simulation';
             <label class="toggle">
               <input type="checkbox" id="follow-edges" /> Following
             </label>
+            <label class="toggle">
+              <input type="checkbox" id="pause-layout" /> Pause layout
+            </label>
             <button id="reset-view" class="quiet">
               Reset view ↺
             </button>
+          </div>
+          <div id="memory-controls" class="toolbar" hidden>
+            <label>
+              Meme{' '}
+              <select id="memory-meme">
+                <option value="">No memes yet</option>
+              </select>
+            </label>
+            <label>
+              Include{' '}
+              <select id="memory-scope">
+                <option value="variant">This variant only</option>
+                <option value="family">All related variants</option>
+              </select>
+            </label>
           </div>
           <div id="legend" class="legend"></div>
           <div class="activity">

@@ -183,6 +183,8 @@ test('mutation spends distance-weighted creativity and evaluates the new meme fo
   assert.ok(stats.shares > 0);
   const remix = g.memes.get(1)!;
   assert.equal(remix.parent, original.id);
+  assert.equal(remix.creator, p.id);
+  assert.equal(remix.born, g.round);
   assert.ok(
     Math.abs(
       p.creativity -

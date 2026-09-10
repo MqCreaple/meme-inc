@@ -672,3 +672,13 @@ footer small {
     display: none;
   }
 }
+
+#memory-controls label {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+}
+#memory-controls select {
+  flex: 1;
+  min-width: 0;
+}

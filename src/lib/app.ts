@@ -1,3 +1,9 @@
+import {
+  memoryStrength,
+  recentCreators,
+  mutationCreators,
+  type MemoryScope,
+} from './visual-state';
 import { NetworkView } from './network-view';
 import {
   ATTRIBUTES,
@@ -36,6 +42,7 @@ function createView() {
     selectedPerson = id;
     render();
   });
+  network.setPaused(input('pause-layout').checked);
 }
 const text = (id: string, value: string | number) => {
   $(id).textContent = String(value);
@@ -85,24 +92,38 @@ function mix(colours: string[], weights: number[]) {
   return `rgb(${rgb.join(',')})`;
 }
 function draw() {
+  const mode = select('colour').value;
+  const scope = select('memory-scope').value as MemoryScope;
+  const meme =
+    selectedMeme === undefined ? undefined : game.memes.get(selectedMeme);
+  const creators = recentCreators(game);
+  $('memory-controls').hidden = mode !== 'memory';
   network.update(
     (id) => {
       const p = game.people[id];
-      const mode = select('colour').value;
       const memory =
-        selectedMeme === undefined ? 0 : (p.memory.get(selectedMeme) ?? 0);
-      return mode === 'memory'
-        ? mix(['#d8dfd2', '#286640'], [1 - clamp(memory), clamp(memory)])
-        : mode === 'preference'
-          ? mix(
-              prefPalette,
-              p.preferences.map((pref) => pref.mean),
-            )
-          : mix(palette, p.interests);
+        mode === 'memory' ? memoryStrength(p, game.memes, meme, scope) : 0;
+      if (mode === 'memory')
+        return mix(['#d8dfd2', '#286640'], [1 - clamp(memory), clamp(memory)]);
+      if (mode === 'creativity') {
+        const intensity = p.creativity / (p.creativity + 10);
+        return mix(['#e3e3ef', '#6745b4'], [1 - intensity, intensity]);
+      }
+      if (mode === 'creators') {
+        const intensity = creators.get(id) ?? 0;
+        return mix(['#e5e0d4', '#db741e'], [1 - intensity, intensity]);
+      }
+      return mode === 'preference'
+        ? mix(
+            prefPalette,
+            p.preferences.map((pref) => pref.mean),
+          )
+        : mix(palette, p.interests);
     },
     selectedPerson,
     input('friend-edges').checked,
     input('follow-edges').checked,
+    mutationCreators(game, game.round, mode === 'memory', meme, scope),
   );
 }
 function legend() {
@@ -112,13 +133,21 @@ function legend() {
       ? THEMES
       : mode === 'preference'
         ? ATTRIBUTES
-        : ['No memory', 'Strong memory'];
+        : mode === 'creativity'
+          ? ['No creativity saved', 'More saved (half intensity at 10)']
+          : mode === 'creators'
+            ? ['No creation in 5 rounds', 'Created this round']
+            : ['No memory', 'Strong memory'];
   const colours =
     mode === 'interest'
       ? palette
       : mode === 'preference'
         ? prefPalette
-        : ['#d8dfd2', '#286640'];
+        : mode === 'creativity'
+          ? ['#e3e3ef', '#6745b4']
+          : mode === 'creators'
+            ? ['#e5e0d4', '#db741e']
+            : ['#d8dfd2', '#286640'];
   $('legend').replaceChildren(
     ...labels.map((label, i) => {
       const span = document.createElement('span'),
@@ -157,7 +186,7 @@ function renderPerson() {
   $('person-panel').hidden = selectedPerson === undefined;
   if (selectedPerson === undefined) return;
   const p = game.people[selectedPerson];
-  text('person-title', `Person ${String(p.id + 1).padStart(3, '0')}`);
+  text('person-title', p.name);
   const details = $('person-details');
   details.replaceChildren();
   const summary = document.createElement('p');
@@ -209,6 +238,11 @@ function renderMemes() {
   for (const m of game.memes.values())
     picker.add(new Option(m.name, String(m.id)));
   picker.value = selectedMeme === undefined ? '' : String(selectedMeme);
+  const memoryPicker = select('memory-meme');
+  memoryPicker.replaceChildren(
+    ...Array.from(picker.options, (option) => option.cloneNode(true)),
+  );
+  memoryPicker.value = picker.value;
   text('meme-count', `${game.memes.size} memes`);
   const details = $('meme-details');
   details.replaceChildren();
@@ -219,6 +253,8 @@ function renderMemes() {
   info.textContent = meme
     ? `${meme.parent === undefined ? 'Original' : `Remix of ${game.memes.get(meme.parent)!.name}`} · born round ${meme.born} · remembered by ${game.memoryCount(meme.id)} people. Themes: ${THEMES.filter((_, i) => meme.themes[i]).join(', ')}.`
     : 'Originals and community remixes will appear here.';
+  if (meme?.creator !== undefined)
+    info.textContent += ` Created by ${game.people[meme.creator].name}.`;
   details.append(info);
   if (meme) {
     const attributes = document.createElement('p');
@@ -295,7 +331,7 @@ $('seed-person').onclick = () =>
     selectedMeme = meme.id;
     select('colour').value = 'memory';
     message(
-      `Launched “${meme.name}” to Person ${selectedPerson! + 1}. Advance a round to see their reaction.`,
+      `Launched “${meme.name}” to ${game.people[selectedPerson!].name}. Advance a round to see their reaction.`,
     );
   });
 $('next-round').onclick = () =>
@@ -314,7 +350,8 @@ $('edit-meme').onclick = () =>
   });
 $('recommendation').onchange = () => {
   game.recommendation = select('recommendation').value as Recommendation;
-  message('Feed priorities updated for the next round.');
+  message('Feed priorities and graph forces updated.');
+  draw();
 };
 $('selected-meme').onchange = () => {
   selectedMeme =
@@ -328,7 +365,13 @@ ATTRIBUTES.forEach((_, i) => {
   input(`attribute-${i}`).oninput = () =>
     text(`attribute-value-${i}`, `${input(`attribute-${i}`).value}%`);
 });
-for (const id of ['colour', 'friend-edges', 'follow-edges'])
+$('memory-meme').onchange = () => {
+  select('selected-meme').value = select('memory-meme').value;
+  select('selected-meme').dispatchEvent(new Event('change'));
+};
+$('pause-layout').onchange = () =>
+  network.setPaused(input('pause-layout').checked);
+for (const id of ['colour', 'friend-edges', 'follow-edges', 'memory-scope'])
   $(id).onchange = () => {
     legend();
     draw();
