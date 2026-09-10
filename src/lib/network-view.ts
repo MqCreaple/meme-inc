@@ -166,6 +166,7 @@ export class NetworkView {
       (!this.friendsVisible && !this.followsVisible)
     ) {
       this.container.dataset.layout = 'paused';
+      this.container.dataset.layoutMotion = 'paused';
       status.textContent = this.paused
         ? 'Layout paused · drag to arrange'
         : 'Select a graph to animate connections';
@@ -177,6 +178,7 @@ export class NetworkView {
       this.followsVisible,
     );
     this.container.dataset.layout = 'running';
+    this.container.dataset.layoutMotion = 'active';
     status.textContent = 'Live layout · drag a person to move them';
     this.layout = new LiveLayout(
       forces,
@@ -197,6 +199,11 @@ export class NetworkView {
               y: this.graph.getNodeAttribute(id, 'y'),
             }
           : undefined,
+      () => {
+        if (generation !== this.generation) return;
+        this.container.dataset.layoutMotion = 'settled';
+        status.textContent = 'Layout settled · drag a person to rearrange';
+      },
     );
   }
 
